@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.32.8
-Release  : 10
+Release  : 11
 URL      : http://cairographics.org/releases/pixman-0.32.8.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.32.8.tar.gz
 Summary  : The pixman library (version 1)
