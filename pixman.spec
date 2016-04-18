@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 13
+Release  : 14
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
@@ -42,9 +42,24 @@ lib components for the pixman package.
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
 export NM=gcc-nm
-export CFLAGS="$CFLAGS -O3 -falign-functions=32 -flto -fno-semantic-interposition "
-export CXXFLAGS="$CXXFLAGS -O3 -falign-functions=32 -flto -fno-semantic-interposition "
-%configure --disable-static --disable-gtk
+export CFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
+export FCFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
+export FFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
+export CXXFLAGS="$CXXFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
+export CFLAGS_GENERATE="$CFLAGS -fprofile-generate -fprofile-dir=pgo "
+export FCFLAGS_GENERATE="$FCFLAGS -fprofile-generate -fprofile-dir=pgo "
+export FFLAGS_GENERATE="$FFLAGS -fprofile-generate -fprofile-dir=pgo "
+export CXXFLAGS_GENERATE="$CXXFLAGS -fprofile-generate -fprofile-dir=pgo "
+export CFLAGS_USE="$CFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
+export FCFLAGS_USE="$FCFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
+export FFLAGS_USE="$FFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
+export CXXFLAGS_USE="$CXXFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
+CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" %configure --disable-static --disable-gtk
+make V=1  %{?_smp_mflags}
+
+make check
+make clean
+CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" %configure --disable-static --disable-gtk
 make V=1  %{?_smp_mflags}
 
 %check
