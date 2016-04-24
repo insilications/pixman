@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 14
+Release  : 15
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
@@ -12,6 +12,7 @@ Group    : Development/Tools
 License  : MIT
 Requires: pixman-lib
 BuildRequires : pkgconfig(libpng)
+Patch1: fmv.patch
 
 %description
 Pixman is a library that provides low-level pixel manipulation
@@ -37,15 +38,16 @@ lib components for the pixman package.
 
 %prep
 %setup -q -n pixman-0.34.0
+%patch1 -p1
 
 %build
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
 export NM=gcc-nm
-export CFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
-export FCFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
-export FFLAGS="$CFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
-export CXXFLAGS="$CXXFLAGS -falign-functions=32 -flto -fno-semantic-interposition -O3 "
+export CFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
+export FCFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
+export FFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
+export CXXFLAGS="$CXXFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
 export CFLAGS_GENERATE="$CFLAGS -fprofile-generate -fprofile-dir=pgo "
 export FCFLAGS_GENERATE="$FCFLAGS -fprofile-generate -fprofile-dir=pgo "
 export FFLAGS_GENERATE="$FFLAGS -fprofile-generate -fprofile-dir=pgo "

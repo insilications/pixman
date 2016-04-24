@@ -1,0 +1,39 @@
+--- pixman-0.34.0/pixman/pixman-fast-path.c~	2015-09-26 13:45:08.000000000 +0000
++++ pixman-0.34.0/pixman/pixman-fast-path.c	2016-04-24 02:44:07.219803840 +0000
+@@ -2050,7 +2050,7 @@
+     }
+ }
+ 
+-static void
++__attribute__((target_clones("arch=core-avx2","default"))) static void
+ pixman_fill8 (uint32_t *bits,
+               int       stride,
+               int       x,
+@@ -2075,7 +2075,7 @@
+     }
+ }
+ 
+-static void
++__attribute__((target_clones("arch=core-avx2","default"))) static void
+ pixman_fill16 (uint32_t *bits,
+                int       stride,
+                int       x,
+@@ -2101,7 +2101,7 @@
+     }
+ }
+ 
+-static void
++__attribute__((target_clones("arch=core-avx2","default"))) static void
+ pixman_fill32 (uint32_t *bits,
+                int       stride,
+                int       x,
+--- pixman-0.34.0/pixman/pixman-sse2.c~	2016-01-04 09:13:54.000000000 +0000
++++ pixman-0.34.0/pixman/pixman-sse2.c	2016-04-24 02:52:29.971405520 +0000
+@@ -6516,7 +6516,6 @@
+     imp->combine_32_ca[PIXMAN_OP_ADD] = sse2_combine_add_ca;
+ 
+     imp->blt = sse2_blt;
+-    imp->fill = sse2_fill;
+ 
+     imp->iter_info = sse2_iters;
+ 
