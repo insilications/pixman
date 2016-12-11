@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 17
+Release  : 18
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
@@ -41,13 +41,11 @@ lib components for the pixman package.
 %patch1 -p1
 
 %build
-export AR=gcc-ar
-export RANLIB=gcc-ranlib
-export NM=gcc-nm
-export CFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
-export FCFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
-export FFLAGS="$CFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
-export CXXFLAGS="$CXXFLAGS -falign-functions=32 -fno-semantic-interposition -O3 "
+export LANG=C
+export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
+export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
+export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
+export CXXFLAGS="$CXXFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
 export CFLAGS_GENERATE="$CFLAGS -fprofile-generate -fprofile-dir=pgo "
 export FCFLAGS_GENERATE="$FCFLAGS -fprofile-generate -fprofile-dir=pgo "
 export FFLAGS_GENERATE="$FFLAGS -fprofile-generate -fprofile-dir=pgo "
@@ -65,6 +63,7 @@ CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS
 make V=1  %{?_smp_mflags}
 
 %check
+export LANG=C
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost
@@ -81,9 +80,10 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 /usr/include/pixman-1/pixman-version.h
 /usr/include/pixman-1/pixman.h
-/usr/lib64/*.so
-/usr/lib64/pkgconfig/*.pc
+/usr/lib64/libpixman-1.so
+/usr/lib64/pkgconfig/pixman-1.pc
 
 %files lib
 %defattr(-,root,root,-)
-/usr/lib64/*.so.*
+/usr/lib64/libpixman-1.so.0
+/usr/lib64/libpixman-1.so.0.34.0
