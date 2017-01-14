@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 19
+Release  : 20
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
@@ -38,6 +38,7 @@ dev components for the pixman package.
 Summary: dev32 components for the pixman package.
 Group: Default
 Requires: pixman-lib32
+Requires: pixman-dev
 
 %description dev32
 dev32 components for the pixman package.
@@ -68,6 +69,7 @@ popd
 
 %build
 export LANG=C
+export SOURCE_DATE_EPOCH=1484412041
 export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
 export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
 export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
@@ -89,10 +91,11 @@ CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS
 make V=1  %{?_smp_mflags}
 
 pushd ../build32/
+export PKG_CONFIG_PATH="/usr/lib32/pkgconfig"
 export CFLAGS="$CFLAGS -m32"
 export CXXFLAGS="$CXXFLAGS -m32"
 export LDFLAGS="$LDFLAGS -m32"
-%configure --disable-static --disable-gtk  --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
+%configure --disable-static --disable-gtk   --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
 make V=1  %{?_smp_mflags}
 popd
 %check
@@ -103,13 +106,14 @@ export no_proxy=localhost
 make VERBOSE=1 V=1 %{?_smp_mflags} check
 
 %install
+export SOURCE_DATE_EPOCH=1484412041
 rm -rf %{buildroot}
 pushd ../build32/
 %make_install32
 if [ -d  %{buildroot}/usr/lib32/pkgconfig ]
 then
 pushd %{buildroot}/usr/lib32/pkgconfig
-for i in *.pc ; do mv $i 32$i ; done
+for i in *.pc ; do ln -s $i 32$i ; done
 popd
 fi
 popd
@@ -129,6 +133,7 @@ popd
 %defattr(-,root,root,-)
 /usr/lib32/libpixman-1.so
 /usr/lib32/pkgconfig/32pixman-1.pc
+/usr/lib32/pkgconfig/pixman-1.pc
 
 %files lib
 %defattr(-,root,root,-)
