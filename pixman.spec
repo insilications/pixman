@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 22
+Release  : 23
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
@@ -17,7 +17,10 @@ BuildRequires : gcc-libstdc++32
 BuildRequires : glibc-dev32
 BuildRequires : glibc-libc32
 BuildRequires : libpng-dev32
+BuildRequires : pkgconfig(32pixman-1)
 BuildRequires : pkgconfig(libpng)
+BuildRequires : pkgconfig(pixman-1)
+BuildRequires : zlib-dev32
 Patch1: fmv.patch
 
 %description
@@ -66,47 +69,87 @@ lib32 components for the pixman package.
 pushd ..
 cp -a pixman-0.34.0 build32
 popd
+pushd ..
+cp -a pixman-0.34.0 buildavx2
+popd
+pushd ..
+cp -a pixman-0.34.0 buildavx512
+popd
 
 %build
+export http_proxy=http://127.0.0.1:9/
+export https_proxy=http://127.0.0.1:9/
+export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1484412041
-export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
-export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
-export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
-export CXXFLAGS="$CXXFLAGS -O3 -falign-functions=32 -fno-semantic-interposition "
-export CFLAGS_GENERATE="$CFLAGS -fprofile-generate -fprofile-dir=pgo "
-export FCFLAGS_GENERATE="$FCFLAGS -fprofile-generate -fprofile-dir=pgo "
-export FFLAGS_GENERATE="$FFLAGS -fprofile-generate -fprofile-dir=pgo "
-export CXXFLAGS_GENERATE="$CXXFLAGS -fprofile-generate -fprofile-dir=pgo "
+export SOURCE_DATE_EPOCH=1524540460
+export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
+export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
+export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
+export CXXFLAGS="$CXXFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
+export CFLAGS_GENERATE="$CFLAGS -fprofile-generate -fprofile-dir=pgo -fprofile-update=atomic "
+export FCFLAGS_GENERATE="$FCFLAGS -fprofile-generate -fprofile-dir=pgo -fprofile-update=atomic "
+export FFLAGS_GENERATE="$FFLAGS -fprofile-generate -fprofile-dir=pgo -fprofile-update=atomic "
+export CXXFLAGS_GENERATE="$CXXFLAGS -fprofile-generate -fprofile-dir=pgo -fprofile-update=atomic "
 export CFLAGS_USE="$CFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
 export FCFLAGS_USE="$FCFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
 export FFLAGS_USE="$FFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
 export CXXFLAGS_USE="$CXXFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
-CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" %configure --disable-static --disable-gtk
-make V=1  %{?_smp_mflags}
+CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" %configure --disable-static --disable-gtk \
+--disable-mmx \
+--disable-sse2 \
+--disable-ssse3
+make  %{?_smp_mflags}
 
-make check
+make check || :
 make clean
-CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" %configure --disable-static --disable-gtk
-make V=1  %{?_smp_mflags}
+CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" %configure --disable-static --disable-gtk \
+--disable-mmx \
+--disable-sse2 \
+--disable-ssse3
+make  %{?_smp_mflags}
 
 pushd ../build32/
 export PKG_CONFIG_PATH="/usr/lib32/pkgconfig"
 export CFLAGS="$CFLAGS -m32"
 export CXXFLAGS="$CXXFLAGS -m32"
 export LDFLAGS="$LDFLAGS -m32"
-%configure --disable-static --disable-gtk   --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
-make V=1  %{?_smp_mflags}
+%configure --disable-static --disable-gtk \
+--disable-mmx \
+--disable-sse2 \
+--disable-ssse3   --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
+make  %{?_smp_mflags}
+popd
+unset PKG_CONFIG_PATH
+pushd ../buildavx2/
+export CFLAGS="$CFLAGS -m64 -march=haswell"
+export CXXFLAGS="$CXXFLAGS -m64 -march=haswell"
+export LDFLAGS="$LDFLAGS -m64 -march=haswell"
+%configure --disable-static --disable-gtk \
+--disable-mmx \
+--disable-sse2 \
+--disable-ssse3   --libdir=/usr/lib64/haswell
+make  %{?_smp_mflags}
+popd
+unset PKG_CONFIG_PATH
+pushd ../buildavx512/
+export CFLAGS="$CFLAGS -m64 -march=skylake-avx512"
+export CXXFLAGS="$CXXFLAGS -m64 -march=skylake-avx512"
+export LDFLAGS="$LDFLAGS -m64 -march=skylake-avx512"
+%configure --disable-static --disable-gtk \
+--disable-mmx \
+--disable-sse2 \
+--disable-ssse3   --libdir=/usr/lib64/haswell/avx512_1 --bindir=/usr/bin/haswell/avx512_1
+make  %{?_smp_mflags}
 popd
 %check
 export LANG=C
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
-export no_proxy=localhost
-make VERBOSE=1 V=1 %{?_smp_mflags} check
+export no_proxy=localhost,127.0.0.1,0.0.0.0
+make VERBOSE=1 V=1 %{?_smp_mflags} check || :
 
 %install
-export SOURCE_DATE_EPOCH=1484412041
+export SOURCE_DATE_EPOCH=1524540460
 rm -rf %{buildroot}
 pushd ../build32/
 %make_install32
@@ -117,6 +160,12 @@ for i in *.pc ; do ln -s $i 32$i ; done
 popd
 fi
 popd
+pushd ../buildavx2/
+%make_install
+popd
+pushd ../buildavx512/
+%make_install
+popd
 %make_install
 
 %files
@@ -126,6 +175,7 @@ popd
 %defattr(-,root,root,-)
 /usr/include/pixman-1/pixman-version.h
 /usr/include/pixman-1/pixman.h
+/usr/lib64/haswell/libpixman-1.so
 /usr/lib64/libpixman-1.so
 /usr/lib64/pkgconfig/pixman-1.pc
 
@@ -137,6 +187,11 @@ popd
 
 %files lib
 %defattr(-,root,root,-)
+/usr/lib64/haswell/avx512_1/libpixman-1.so
+/usr/lib64/haswell/avx512_1/libpixman-1.so.0
+/usr/lib64/haswell/avx512_1/libpixman-1.so.0.34.0
+/usr/lib64/haswell/libpixman-1.so.0
+/usr/lib64/haswell/libpixman-1.so.0.34.0
 /usr/lib64/libpixman-1.so.0
 /usr/lib64/libpixman-1.so.0.34.0
 
