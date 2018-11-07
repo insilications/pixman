@@ -68,9 +68,6 @@ libpixman-1.so.0:pixman_f_transform_rotate
 libpixman-1.so.0:pixman_f_transform_scale
 libpixman-1.so.0:pixman_f_transform_translate
 libpixman-1.so.0:pixman_fill
-libpixman-1.so.0:pixman_fill16._GLOBAL___pixman_fast_path.c_52E8EC49_0x4d3deb5a369e470.resolver
-libpixman-1.so.0:pixman_fill32._GLOBAL___pixman_fast_path.c_52E8EC49_0x4d3deb5a369e470.resolver
-libpixman-1.so.0:pixman_fill8._GLOBAL___pixman_fast_path.c_52E8EC49_0x4d3deb5a369e470.resolver
 libpixman-1.so.0:pixman_filter_create_separable_convolution
 libpixman-1.so.0:pixman_float_to_unorm
 libpixman-1.so.0:pixman_format_supported_destination

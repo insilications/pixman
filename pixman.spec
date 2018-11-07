@@ -4,19 +4,21 @@
 #
 Name     : pixman
 Version  : 0.34.0
-Release  : 25
+Release  : 26
 URL      : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.34.0.tar.gz
 Summary  : The pixman library (version 1)
 Group    : Development/Tools
 License  : MIT
-Requires: pixman-lib
+Requires: pixman-lib = %{version}-%{release}
+Requires: pixman-license = %{version}-%{release}
 BuildRequires : gcc-dev32
 BuildRequires : gcc-libgcc32
 BuildRequires : gcc-libstdc++32
 BuildRequires : glibc-dev32
 BuildRequires : glibc-libc32
 BuildRequires : libpng-dev32
+BuildRequires : pkg-config
 BuildRequires : pkgconfig(32pixman-1)
 BuildRequires : pkgconfig(libpng)
 BuildRequires : pkgconfig(pixman-1)
@@ -30,8 +32,8 @@ features such as image compositing and trapezoid rasterization.
 %package dev
 Summary: dev components for the pixman package.
 Group: Development
-Requires: pixman-lib
-Provides: pixman-devel
+Requires: pixman-lib = %{version}-%{release}
+Provides: pixman-devel = %{version}-%{release}
 
 %description dev
 dev components for the pixman package.
@@ -40,8 +42,8 @@ dev components for the pixman package.
 %package dev32
 Summary: dev32 components for the pixman package.
 Group: Default
-Requires: pixman-lib32
-Requires: pixman-dev
+Requires: pixman-lib32 = %{version}-%{release}
+Requires: pixman-dev = %{version}-%{release}
 
 %description dev32
 dev32 components for the pixman package.
@@ -50,6 +52,7 @@ dev32 components for the pixman package.
 %package lib
 Summary: lib components for the pixman package.
 Group: Libraries
+Requires: pixman-license = %{version}-%{release}
 
 %description lib
 lib components for the pixman package.
@@ -58,9 +61,18 @@ lib components for the pixman package.
 %package lib32
 Summary: lib32 components for the pixman package.
 Group: Default
+Requires: pixman-license = %{version}-%{release}
 
 %description lib32
 lib32 components for the pixman package.
+
+
+%package license
+Summary: license components for the pixman package.
+Group: Default
+
+%description license
+license components for the pixman package.
 
 
 %prep
@@ -81,7 +93,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1524540736
+export SOURCE_DATE_EPOCH=1541610819
 export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
 export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
 export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
@@ -110,6 +122,7 @@ make  %{?_smp_mflags}
 
 pushd ../build32/
 export PKG_CONFIG_PATH="/usr/lib32/pkgconfig"
+export ASFLAGS="$ASFLAGS --32"
 export CFLAGS="$CFLAGS -m32"
 export CXXFLAGS="$CXXFLAGS -m32"
 export LDFLAGS="$LDFLAGS -m32"
@@ -127,18 +140,18 @@ export LDFLAGS="$LDFLAGS -m64 -march=haswell"
 %configure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
---disable-ssse3   --libdir=/usr/lib64/haswell
+--disable-ssse3
 make  %{?_smp_mflags}
 popd
 unset PKG_CONFIG_PATH
 pushd ../buildavx512/
-export CFLAGS="$CFLAGS -m64 -march=skylake-avx512"
-export CXXFLAGS="$CXXFLAGS -m64 -march=skylake-avx512"
+export CFLAGS="$CFLAGS -m64 -march=skylake-avx512 -mprefer-vector-width=512"
+export CXXFLAGS="$CXXFLAGS -m64 -march=skylake-avx512 -mprefer-vector-width=512"
 export LDFLAGS="$LDFLAGS -m64 -march=skylake-avx512"
 %configure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
---disable-ssse3   --libdir=/usr/lib64/haswell/avx512_1 --bindir=/usr/bin/haswell/avx512_1
+--disable-ssse3
 make  %{?_smp_mflags}
 popd
 %check
@@ -147,10 +160,18 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 make VERBOSE=1 V=1 %{?_smp_mflags} check || :
+cd ../build32;
+make VERBOSE=1 V=1 %{?_smp_mflags} check || : || :
+cd ../buildavx2;
+make VERBOSE=1 V=1 %{?_smp_mflags} check || : || :
+cd ../buildavx512;
+make VERBOSE=1 V=1 %{?_smp_mflags} check || : || :
 
 %install
-export SOURCE_DATE_EPOCH=1524540736
+export SOURCE_DATE_EPOCH=1541610819
 rm -rf %{buildroot}
+mkdir -p %{buildroot}/usr/share/package-licenses/pixman
+cp COPYING %{buildroot}/usr/share/package-licenses/pixman/COPYING
 pushd ../build32/
 %make_install32
 if [ -d  %{buildroot}/usr/lib32/pkgconfig ]
@@ -160,11 +181,11 @@ for i in *.pc ; do ln -s $i 32$i ; done
 popd
 fi
 popd
-pushd ../buildavx2/
-%make_install
-popd
 pushd ../buildavx512/
-%make_install
+%make_install_avx512
+popd
+pushd ../buildavx2/
+%make_install_avx2
 popd
 %make_install
 
@@ -199,3 +220,7 @@ popd
 %defattr(-,root,root,-)
 /usr/lib32/libpixman-1.so.0
 /usr/lib32/libpixman-1.so.0.34.0
+
+%files license
+%defattr(0644,root,root,0755)
+/usr/share/package-licenses/pixman/COPYING
