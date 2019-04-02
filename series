@@ -1,1 +1,3 @@
 fmv.patch
+avx2.patch
+avx2-2.patch

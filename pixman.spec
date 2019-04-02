@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.38.0
-Release  : 31
+Release  : 32
 URL      : http://cairographics.org/releases/pixman-0.38.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.38.0.tar.gz
 Summary  : The pixel-manipulation library for X and cairo
@@ -12,19 +12,28 @@ Group    : Development/Tools
 License  : MIT
 Requires: pixman-lib = %{version}-%{release}
 Requires: pixman-license = %{version}-%{release}
+BuildRequires : automake
+BuildRequires : automake-dev
 BuildRequires : buildreq-meson
 BuildRequires : gcc-dev32
 BuildRequires : gcc-libgcc32
 BuildRequires : gcc-libstdc++32
+BuildRequires : gettext-bin
 BuildRequires : glibc-dev32
 BuildRequires : glibc-libc32
 BuildRequires : libpng-dev32
+BuildRequires : libtool
+BuildRequires : libtool-dev
+BuildRequires : m4
 BuildRequires : pkg-config
+BuildRequires : pkg-config-dev
 BuildRequires : pkgconfig(32pixman-1)
 BuildRequires : pkgconfig(libpng)
 BuildRequires : pkgconfig(pixman-1)
 BuildRequires : zlib-dev32
 Patch1: fmv.patch
+Patch2: avx2.patch
+Patch3: avx2-2.patch
 
 %description
 Pixman is a library that provides low-level pixel manipulation
@@ -80,6 +89,8 @@ license components for the pixman package.
 %prep
 %setup -q -n pixman-0.38.0
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
 pushd ..
 cp -a pixman-0.38.0 build32
 popd
@@ -95,7 +106,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1554216496
+export SOURCE_DATE_EPOCH=1554217156
 export CFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
 export FCFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
 export FFLAGS="$CFLAGS -O3 -falign-functions=32 -fno-math-errno -fno-semantic-interposition -fno-trapping-math "
@@ -108,7 +119,7 @@ export CFLAGS_USE="$CFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction 
 export FCFLAGS_USE="$FCFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
 export FFLAGS_USE="$FFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
 export CXXFLAGS_USE="$CXXFLAGS -fprofile-use -fprofile-dir=pgo -fprofile-correction "
-CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" %configure --disable-static --disable-gtk \
+CFLAGS="${CFLAGS_GENERATE}" CXXFLAGS="${CXXFLAGS_GENERATE}" FFLAGS="${FFLAGS_GENERATE}" FCFLAGS="${FCFLAGS_GENERATE}" %reconfigure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
 --disable-ssse3
@@ -116,22 +127,21 @@ make  %{?_smp_mflags}
 
 make check || :
 make clean
-CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" %configure --disable-static --disable-gtk \
+CFLAGS="${CFLAGS_USE}" CXXFLAGS="${CXXFLAGS_USE}" FFLAGS="${FFLAGS_USE}" FCFLAGS="${FCFLAGS_USE}" %reconfigure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
 --disable-ssse3
 make  %{?_smp_mflags}
-
 pushd ../build32/
 export PKG_CONFIG_PATH="/usr/lib32/pkgconfig"
 export ASFLAGS="${ASFLAGS}${ASFLAGS:+ }--32"
 export CFLAGS="${CFLAGS}${CFLAGS:+ }-m32"
 export CXXFLAGS="${CXXFLAGS}${CXXFLAGS:+ }-m32"
 export LDFLAGS="${LDFLAGS}${LDFLAGS:+ }-m32"
-%configure --disable-static --disable-gtk \
+%reconfigure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
---disable-ssse3   --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
+--disable-ssse3  --libdir=/usr/lib32 --build=i686-generic-linux-gnu --host=i686-generic-linux-gnu --target=i686-clr-linux-gnu
 make  %{?_smp_mflags}
 popd
 unset PKG_CONFIG_PATH
@@ -139,7 +149,7 @@ pushd ../buildavx2/
 export CFLAGS="$CFLAGS -m64 -march=haswell"
 export CXXFLAGS="$CXXFLAGS -m64 -march=haswell"
 export LDFLAGS="$LDFLAGS -m64 -march=haswell"
-%configure --disable-static --disable-gtk \
+%reconfigure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
 --disable-ssse3
@@ -150,12 +160,13 @@ pushd ../buildavx512/
 export CFLAGS="$CFLAGS -m64 -march=skylake-avx512 -mprefer-vector-width=512"
 export CXXFLAGS="$CXXFLAGS -m64 -march=skylake-avx512 -mprefer-vector-width=512"
 export LDFLAGS="$LDFLAGS -m64 -march=skylake-avx512"
-%configure --disable-static --disable-gtk \
+%reconfigure --disable-static --disable-gtk \
 --disable-mmx \
 --disable-sse2 \
 --disable-ssse3
 make  %{?_smp_mflags}
 popd
+
 %check
 export LANG=C
 export http_proxy=http://127.0.0.1:9/
@@ -170,7 +181,7 @@ cd ../buildavx512;
 make VERBOSE=1 V=1 %{?_smp_mflags} check || : || :
 
 %install
-export SOURCE_DATE_EPOCH=1554216496
+export SOURCE_DATE_EPOCH=1554217156
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/pixman
 cp COPYING %{buildroot}/usr/share/package-licenses/pixman/COPYING

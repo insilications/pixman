@@ -22,6 +22,7 @@ libpixman-1.so.0:_pixman_image_reset_clip_region
 libpixman-1.so.0:_pixman_image_validate
 libpixman-1.so.0:_pixman_implementation_blt
 libpixman-1.so.0:_pixman_implementation_create
+libpixman-1.so.0:_pixman_implementation_create_avx2
 libpixman-1.so.0:_pixman_implementation_create_fast_path
 libpixman-1.so.0:_pixman_implementation_create_general
 libpixman-1.so.0:_pixman_implementation_create_noop

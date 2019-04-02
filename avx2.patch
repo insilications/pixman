@@ -1,0 +1,253 @@
+From: raghuveer devulapalli <raghuveer.devulapalli at intel.com>
+
+Based on Chris Wilson's comment, added a check to ensure that OS
+supports AVX2.  This is done using xgetbv instruction which tells if you
+can save the YMM registers.
+---
+ configure.ac            | 44 +++++++++++++++++++++++++++++++++++++++++
+ pixman/Makefile.am      | 12 +++++++++++
+ pixman/pixman-avx2.c    | 32 ++++++++++++++++++++++++++++++
+ pixman/pixman-private.h |  5 +++++
+ pixman/pixman-x86.c     | 38 ++++++++++++++++++++++++++++++++---
+ 5 files changed, 128 insertions(+), 3 deletions(-)
+ create mode 100644 pixman/pixman-avx2.c
+
+diff --git a/configure.ac b/configure.ac
+index 6efc6c0..d8b9179 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -502,6 +502,48 @@ fi
+ 
+ AM_CONDITIONAL(USE_SSSE3, test $have_ssse3_intrinsics = yes)
+ 
++dnl ===========================================================================
++dnl Check for AVX2
++
++if test "x$AVX2_CFLAGS" = "x" ; then
++    AVX2_CFLAGS="-mavx2 -Winline"
++fi
++
++have_avx2_intrinsics=no
++AC_MSG_CHECKING(whether to use AVX2 intrinsics)
++xserver_save_CFLAGS=$CFLAGS
++CFLAGS="$AVX2_CFLAGS $CFLAGS"
++
++AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
++#include <immintrin.h>
++int param;
++int main () {
++    __m256i a = _mm256_set1_epi32 (param), b = _mm256_set1_epi32 (param + 1), c;
++    c = _mm256_maddubs_epi16 (a, b);
++    return _mm256_cvtsi256_si32(c);
++}]])], have_avx2_intrinsics=yes)
++CFLAGS=$xserver_save_CFLAGS
++
++AC_ARG_ENABLE(avx2,
++   [AC_HELP_STRING([--disable-avx2],
++                   [disable AVX2 fast paths])],
++   [enable_avx2=$enableval], [enable_avx2=auto])
++
++if test $enable_avx2 = no ; then
++   have_avx2_intrinsics=disabled
++fi
++
++if test $have_avx2_intrinsics = yes ; then
++   AC_DEFINE(USE_AVX2, 1, [use AVX2 compiler intrinsics])
++fi
++
++AC_MSG_RESULT($have_avx2_intrinsics)
++if test $enable_avx2 = yes && test $have_avx2_intrinsics = no ; then
++   AC_MSG_ERROR([AVX2 intrinsics not detected])
++fi
++
++AM_CONDITIONAL(USE_AVX2, test $have_avx2_intrinsics = yes)
++
+ dnl ===========================================================================
+ dnl Other special flags needed when building code using MMX or SSE instructions
+ case $host_os in
+@@ -538,6 +580,8 @@ AC_SUBST(MMX_LDFLAGS)
+ AC_SUBST(SSE2_CFLAGS)
+ AC_SUBST(SSE2_LDFLAGS)
+ AC_SUBST(SSSE3_CFLAGS)
++AC_SUBST(AVX2_CFLAGS)
++AC_SUBST(AVX2_LDFLAGS)
+ 
+ dnl ===========================================================================
+ dnl Check for VMX/Altivec
+diff --git a/pixman/Makefile.am b/pixman/Makefile.am
+index 3de2615..212911e 100644
+--- a/pixman/Makefile.am
++++ b/pixman/Makefile.am
+@@ -65,6 +65,18 @@ libpixman_1_la_LIBADD += libpixman-ssse3.la
+ ASM_CFLAGS_ssse3=$(SSSE3_CFLAGS)
+ endif
+ 
++# avx2 code
++if USE_AVX2
++noinst_LTLIBRARIES += libpixman-avx2.la
++libpixman_avx2_la_SOURCES = \
++	pixman-avx2.c
++libpixman_avx2_la_CFLAGS = $(AVX2_CFLAGS)
++libpixman_1_la_LDFLAGS += $(AVX2_LDFLAGS)
++libpixman_1_la_LIBADD += libpixman-avx2.la
++
++ASM_CFLAGS_avx2=$(AVX2_CFLAGS)
++endif
++
+ # arm simd code
+ if USE_ARM_SIMD
+ noinst_LTLIBRARIES += libpixman-arm-simd.la
+diff --git a/pixman/pixman-avx2.c b/pixman/pixman-avx2.c
+new file mode 100644
+index 0000000..d860d67
+--- /dev/null
++++ b/pixman/pixman-avx2.c
+@@ -0,0 +1,32 @@
++#ifdef HAVE_CONFIG_H
++#include <config.h>
++#endif
++
++#include <immintrin.h> /* for AVX2 intrinsics */
++#include "pixman-private.h"
++#include "pixman-combine32.h"
++#include "pixman-inlines.h"
++
++static const pixman_fast_path_t avx2_fast_paths[] =
++{
++    { PIXMAN_OP_NONE },
++};
++
++static const pixman_iter_info_t avx2_iters[] = 
++{
++    { PIXMAN_null },
++};
++
++#if defined(__GNUC__) && !defined(__x86_64__) && !defined(__amd64__)
++__attribute__((__force_align_arg_pointer__))
++#endif
++pixman_implementation_t *
++_pixman_implementation_create_avx2 (pixman_implementation_t *fallback)
++{
++    pixman_implementation_t *imp = _pixman_implementation_create (fallback, avx2_fast_paths);
++
++    /* Set up function pointers */
++    imp->iter_info = avx2_iters;
++
++    return imp;
++}
+diff --git a/pixman/pixman-private.h b/pixman/pixman-private.h
+index 1bd9695..74d23e4 100644
+--- a/pixman/pixman-private.h
++++ b/pixman/pixman-private.h
+@@ -626,6 +626,11 @@ pixman_implementation_t *
+ _pixman_implementation_create_ssse3 (pixman_implementation_t *fallback);
+ #endif
+ 
++#ifdef USE_AVX2
++pixman_implementation_t *
++_pixman_implementation_create_avx2 (pixman_implementation_t *fallback);
++#endif
++
+ #ifdef USE_ARM_SIMD
+ pixman_implementation_t *
+ _pixman_implementation_create_arm_simd (pixman_implementation_t *fallback);
+diff --git a/pixman/pixman-x86.c b/pixman/pixman-x86.c
+index 05297c4..f50f465 100644
+--- a/pixman/pixman-x86.c
++++ b/pixman/pixman-x86.c
+@@ -25,7 +25,10 @@
+ 
+ #include "pixman-private.h"
+ 
+-#if defined(USE_X86_MMX) || defined (USE_SSE2) || defined (USE_SSSE3)
++#define xgetbv(index,eax,edx)                                   \
++	__asm__ ("xgetbv" : "=a"(eax), "=d"(edx) : "c" (index))
++
++#if defined(USE_X86_MMX) || defined (USE_SSE2) || defined (USE_SSSE3) || defined (USE_AVX2)
+ 
+ /* The CPU detection code needs to be in a file not compiled with
+  * "-mmmx -msse", as gcc would generate CMOV instructions otherwise
+@@ -40,7 +43,8 @@ typedef enum
+     X86_SSE			= (1 << 2) | X86_MMX_EXTENSIONS,
+     X86_SSE2			= (1 << 3),
+     X86_CMOV			= (1 << 4),
+-    X86_SSSE3			= (1 << 5)
++    X86_SSSE3			= (1 << 5),
++    X86_AVX2			= (1 << 6)
+ } cpu_features_t;
+ 
+ #ifdef HAVE_GETISAX
+@@ -116,10 +120,13 @@ pixman_cpuid (uint32_t feature,
+ #if defined (__GNUC__)
+ 
+ #if _PIXMAN_X86_64
++    /* To check presence of AVX2, cpuid needs to be executed with eax=7 and
++     * ecx=0. Value of ecx does not matter for other cases.
++     */
+     __asm__ volatile (
+         "cpuid"				"\n\t"
+ 	: "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
+-	: "a" (feature));
++	: "a" (feature), "c" (0));
+ #else
+     /* On x86-32 we need to be careful about the handling of %ebx
+      * and %esp. We can't declare either one as clobbered
+@@ -151,10 +158,16 @@ pixman_cpuid (uint32_t feature,
+ #endif
+ }
+ 
++
+ static cpu_features_t
+ detect_cpu_features (void)
+ {
+     uint32_t a, b, c, d;
++    unsigned int extra = 0;
++    const unsigned int has_YMM = 0x1;
++    const unsigned int XMM_STATE = (0x01 << 1);
++    const unsigned int YMM_STATE = (0x01 << 2);
++    const unsigned int AVX_STATE = (XMM_STATE | YMM_STATE);
+     cpu_features_t features = 0;
+ 
+     if (!have_cpuid())
+@@ -173,6 +186,19 @@ detect_cpu_features (void)
+     if (c & (1 << 9))
+ 	features |= X86_SSSE3;
+ 
++    /* Ensure OS supports saving YMM registers */
++    if (c & (1 << 27))
++    {
++	unsigned int bv_eax, bv_edx;
++	xgetbv(0x00, bv_eax, bv_edx);
++	if ((bv_eax & AVX_STATE) == AVX_STATE)
++	    extra |= has_YMM;
++    }
++
++    pixman_cpuid (0x07, &a, &b, &c, &d);
++    if ((extra & has_YMM) && (b & (1 << 5)))
++	features |= X86_AVX2;
++
+     /* Check for AMD specific features */
+     if ((features & X86_MMX) && !(features & X86_SSE))
+     {
+@@ -228,6 +254,7 @@ _pixman_x86_get_implementations (pixman_implementation_t *imp)
+ #define MMX_BITS  (X86_MMX | X86_MMX_EXTENSIONS)
+ #define SSE2_BITS (X86_MMX | X86_MMX_EXTENSIONS | X86_SSE | X86_SSE2)
+ #define SSSE3_BITS (X86_SSE | X86_SSE2 | X86_SSSE3)
++#define AVX2_BITS (X86_AVX2)
+ 
+ #ifdef USE_X86_MMX
+     if (!_pixman_disabled ("mmx") && have_feature (MMX_BITS))
+@@ -244,5 +271,10 @@ _pixman_x86_get_implementations (pixman_implementation_t *imp)
+ 	imp = _pixman_implementation_create_ssse3 (imp);
+ #endif
+ 
++#ifdef USE_AVX2
++    if (!_pixman_disabled ("avx2") && have_feature (AVX2_BITS))
++	imp = _pixman_implementation_create_avx2(imp);
++#endif
++
+     return imp;
+ }
+-- 
+2.17.1
+
