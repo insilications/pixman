@@ -4,7 +4,7 @@
 #
 Name     : pixman
 Version  : 0.38.0
-Release  : 30
+Release  : 31
 URL      : http://cairographics.org/releases/pixman-0.38.0.tar.gz
 Source0  : http://cairographics.org/releases/pixman-0.38.0.tar.gz
 Summary  : The pixel-manipulation library for X and cairo
