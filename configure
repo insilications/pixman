@@ -2,4 +2,4 @@
 --disable-mmx
 --disable-sse2
 --disable-ssse3
-
+--enable-static
