@@ -1,1 +1,1 @@
-make check || :
+make -j16 check V=1 VERBOSE=1 || :

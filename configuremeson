@@ -1,0 +1,5 @@
+-Ddefault_library=both
+-Dlibpng=enabled
+-Dssse3=enabled
+-Dsse2=enabled
+-Dtests=enabled
