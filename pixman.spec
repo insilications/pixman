@@ -4,10 +4,10 @@
 #
 %define keepstatic 1
 Name     : pixman
-Version  : 0.38.4
-Release  : 301
-URL      : http://cairographics.org/releases/pixman-0.38.4.tar.gz
-Source0  : http://cairographics.org/releases/pixman-0.38.4.tar.gz
+Version  : 0.40.0
+Release  : 303
+URL      : file:///aot/build/clearlinux/packages/pixman/pixman-v0.40.0.tar.gz
+Source0  : file:///aot/build/clearlinux/packages/pixman/pixman-v0.40.0.tar.gz
 Summary  : The pixman library (version 1)
 Group    : Development/Tools
 License  : MIT
@@ -78,6 +78,8 @@ Patch2: avx2.patch
 Patch3: avx2-2.patch
 
 %description
+Pixman
+======
 Pixman is a library that provides low-level pixel manipulation
 features such as image compositing and trapezoid rasterization.
 
@@ -110,8 +112,8 @@ staticdev components for the pixman package.
 
 
 %prep
-%setup -q -n pixman-0.38.4
-cd %{_builddir}/pixman-0.38.4
+%setup -q -n pixman
+cd %{_builddir}/pixman
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
@@ -122,7 +124,7 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1622253543
+export SOURCE_DATE_EPOCH=1623066181
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -206,7 +208,7 @@ fi
 
 
 %install
-export SOURCE_DATE_EPOCH=1622253543
+export SOURCE_DATE_EPOCH=1623066181
 rm -rf %{buildroot}
 %make_install
 ## install_append content
@@ -228,9 +230,9 @@ cp --archive %{buildroot}/usr/lib64/lib*.so* %{buildroot}/usr/lib64/haswell/ || 
 %files lib
 %defattr(-,root,root,-)
 /usr/lib64/haswell/libpixman-1.so.0
-/usr/lib64/haswell/libpixman-1.so.0.38.4
+/usr/lib64/haswell/libpixman-1.so.0.40.1
 /usr/lib64/libpixman-1.so.0
-/usr/lib64/libpixman-1.so.0.38.4
+/usr/lib64/libpixman-1.so.0.40.1
 
 %files staticdev
 %defattr(-,root,root,-)

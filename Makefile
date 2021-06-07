@@ -1,5 +1,5 @@
 PKG_NAME := pixman
-URL = http://cairographics.org/releases/pixman-0.38.4.tar.gz
+URL = https://gitlab.freedesktop.org/pixman/pixman.git
 ARCHIVES = 
 ARCHIVES_GIT = 
 
