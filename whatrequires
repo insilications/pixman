@@ -3,7 +3,9 @@ Thunar-dev
 amtk-dev
 buildreq-gnome
 cairo-dev
+cairo-staticdev
 cairomm-dev
+cairomm-staticdev
 caribou-dev
 cheese-dev
 clutter-dev
@@ -13,11 +15,8 @@ cogl-dev
 colord-gtk-dev
 compat-cairomm-soname10-dev
 compat-gtksourceview-soname3-dev
-compat-libhandy-0.0-dev
 compat-pangomm-soname14-dev
 devhelp-dev
-efl-dev
-enlightenment-dev
 eog-dev
 evince-dev
 evolution-data-server-dev
